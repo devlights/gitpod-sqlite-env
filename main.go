@@ -31,6 +31,15 @@ func exec(db *sql.DB, query string) (sql.Result, error) {
 	return r, err
 }
 
+func query(db *sql.DB, q string) (*sql.Rows, error) {
+	r, err := db.Query(q)
+	if err != nil {
+		return nil, fmt.Errorf("Error: db.Query (%w) (%s)", err, q)
+	}
+
+	return r, err
+}
+
 // main is a main entry point of this app.
 //
 // REFERENCES:
@@ -44,46 +53,51 @@ func main() {
 	defer db.Close()
 
 	var (
-		query string
+		q string
 	)
 
-	query = `
-		CREATE TABLE t1 (c1 TEXT)
+	q = `
+		CREATE TABLE t1 (id INTEGER, c1 TEXT)
 	`
 
-	if _, err := exec(db, query); err != nil {
+	if _, err := exec(db, q); err != nil {
 		log.Println(err)
 		return
 	}
 
-	query = `
-		INSERT INTO t1 VALUES ('hello')
-	`
+	for i, v := range []string{"world", "hello"} {
+		// FIXME: use placeholder
+		q = fmt.Sprintf("INSERT INTO t1 VALUES (%d, '%s')", i+1, v)
 
-	if _, err := exec(db, query); err != nil {
-		log.Println(err)
-		return
+		if _, err := exec(db, q); err != nil {
+			log.Println(err)
+			return
+		}
 	}
 
-	query = `
-		SELECT * FROM t1
+	q = `
+		SELECT * FROM t1 ORDER BY id DESC
 	`
 
-	rows, err := db.Query(query)
+	rows, err := query(db, q)
 	if err != nil {
-		log.Printf("Error: db.Exec (%s) (%s)", query, err)
-		return		
+		log.Println(err)
+		return
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var c1 string
-		if err := rows.Scan(&c1); err != nil {
+		var (
+			id int
+			c1 string
+		)
+		
+		if err := rows.Scan(&id, &c1); err != nil {
 			log.Printf("Error: rows.Scan (%s)", err)
 			break
 		}
 
-		log.Printf("c1: %v", c1)
+		log.Printf("row: %v, %v", id, c1)
 	}
 
 	if err := rows.Err(); err != nil {
