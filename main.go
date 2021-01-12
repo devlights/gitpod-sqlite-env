@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
@@ -12,14 +13,32 @@ func init() {
 	log.SetFlags(0)
 }
 
+func open(connString string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", connString)
+	if err != nil {
+		return nil, fmt.Errorf("Error: sql.Open (%w)", err)
+	}
+
+	return db, err
+}
+
+func exec(db *sql.DB, query string) (sql.Result, error) {
+	r, err := db.Exec(query)
+	if err != nil {
+		return nil, fmt.Errorf("Error: db.Exec (%w) (%s)", err, query)
+	}
+
+	return r, err
+}
+
 // main is a main entry point of this app.
 //
 // REFERENCES:
 //   - https://github.com/mattn/go-sqlite3
 func main() {
-	db, err := sql.Open("sqlite3", "file:test?mode=memory")
+	db, err := open("file:test?mode=memory")
 	if err != nil {
-		log.Printf("Error: sql.Open (%s)", err)
+		log.Println(err)
 		os.Exit(1)
 	}
 	defer db.Close()
@@ -32,8 +51,8 @@ func main() {
 		CREATE TABLE t1 (c1 TEXT)
 	`
 
-	if _, err := db.Exec(query); err != nil {
-		log.Printf("Error: db.Exec (%s) (%s)", query, err)
+	if _, err := exec(db, query); err != nil {
+		log.Println(err)
 		return
 	}
 
@@ -41,8 +60,8 @@ func main() {
 		INSERT INTO t1 VALUES ('hello')
 	`
 
-	if _, err := db.Exec(query); err != nil {
-		log.Printf("Error: db.Exec (%s) (%s)", query, err)
+	if _, err := exec(db, query); err != nil {
+		log.Println(err)
 		return
 	}
 
