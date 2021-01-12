@@ -44,6 +44,7 @@ func query(db *sql.DB, q string) (*sql.Rows, error) {
 //
 // REFERENCES:
 //   - https://github.com/mattn/go-sqlite3
+//   - https://golang.org/pkg/database/sql/
 func main() {
 	db, err := open("file:test?mode=memory")
 	if err != nil {
@@ -91,7 +92,7 @@ func main() {
 			id int
 			c1 string
 		)
-		
+
 		if err := rows.Scan(&id, &c1); err != nil {
 			log.Printf("Error: rows.Scan (%s)", err)
 			break
